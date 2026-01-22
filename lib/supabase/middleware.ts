@@ -37,15 +37,25 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const path = request.nextUrl.pathname
+
+  // Nếu user chưa đăng nhập và cố vào trang bảo vệ (không phải login/register/auth)
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/register') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !path.startsWith('/login') &&
+    !path.startsWith('/register') &&
+    !path.startsWith('/auth')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Nếu user ĐÃ đăng nhập mà cố vào trang login hoặc register -> đẩy về dashboard
+  if (user && (path.startsWith('/login') || path.startsWith('/register'))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 

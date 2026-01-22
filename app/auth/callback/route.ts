@@ -11,19 +11,15 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+      // Sau khi exchange code thành công, cookie session đã được set.
+      // Chúng ta redirect về trang đích (mặc định là /).
+      // Sử dụng origin từ request URL để đảm bảo đúng domain (localhost hoặc vercel).
+      return NextResponse.redirect(`${origin}${next}`)
+    } else {
+        console.error('Auth callback error:', error)
     }
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  return NextResponse.redirect(`${origin}/login?error=Authentication failed`)
 }
