@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
 
   // TẠM THỜI TẮT REDIRECT ĐỂ DEBUG
   // Nếu user chưa đăng nhập và cố vào trang bảo vệ (không phải login/register/auth)
-  /*
+  
   if (
     !user &&
     !path.startsWith('/login') &&
@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
-  */
+  
 
   // Nếu user ĐÃ đăng nhập mà cố vào trang login hoặc register -> đẩy về dashboard
   if (user && (path.startsWith('/login') || path.startsWith('/register'))) {

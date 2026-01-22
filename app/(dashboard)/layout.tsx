@@ -11,6 +11,15 @@ export default async function DashboardLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    // Fallback if middleware misses it (though middleware should catch it)
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Đang chuyển hướng...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr]">
       <Sidebar />
