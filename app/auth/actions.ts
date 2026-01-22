@@ -54,11 +54,14 @@ export async function loginWithGoogle() {
   const getURL = () => {
     let url =
       process.env.NEXT_PUBLIC_BASE_URL ?? // Ưu tiên biến môi trường do bạn set
-      process.env.NEXT_PUBLIC_VERCEL_URL ?? // Biến do Vercel tự động set
       'http://localhost:3000'
       
     // Đảm bảo có https:// (trừ localhost)
-    url = url.includes('http') ? url : `https://${url}`
+    if (url.includes('localhost')) {
+        url = url.startsWith('http') ? url : `http://${url}`
+    } else {
+        url = url.startsWith('http') ? url : `https://${url}`
+    }
     // Loại bỏ dấu / ở cuối nếu có
     url = url.replace(/\/+$/, '')
     return url
