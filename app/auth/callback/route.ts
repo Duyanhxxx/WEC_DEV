@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Xác nhận session đã được tạo
+      // Check if session is created
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
         console.error('Auth callback: Session exchange successful but getUser failed', userError)

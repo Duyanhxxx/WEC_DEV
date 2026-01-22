@@ -42,11 +42,15 @@ export function AddClassDialog() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       
+      if (!user) {
+        throw new Error("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.")
+      }
+
       const { error } = await supabase.from("classes").insert({
         name,
         grade,
         teacher,
-        user_id: user?.id // Optional: track who created it
+        user_id: user.id
       })
 
       if (error) throw error
@@ -86,16 +90,7 @@ export function AddClassDialog() {
               <Label htmlFor="grade" className="text-right">
                 Khối
               </Label>
-              <Select name="grade" defaultValue="10">
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Chọn khối" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">Khối 10</SelectItem>
-                  <SelectItem value="11">Khối 11</SelectItem>
-                  <SelectItem value="12">Khối 12</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input id="grade" name="grade" placeholder="Ví dụ: 10, 11, Đại học..." className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="teacher" className="text-right">
