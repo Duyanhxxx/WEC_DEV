@@ -50,10 +50,27 @@ export async function signup(formData: FormData) {
 
 export async function loginWithGoogle() {
   const supabase = await createClient()
+  
+  const getURL = () => {
+    let url =
+      process.env.NEXT_PUBLIC_BASE_URL ?? // Ưu tiên biến môi trường do bạn set
+      process.env.NEXT_PUBLIC_VERCEL_URL ?? // Biến do Vercel tự động set
+      'http://localhost:3000'
+      
+    // Đảm bảo có https:// (trừ localhost)
+    url = url.includes('http') ? url : `https://${url}`
+    // Loại bỏ dấu / ở cuối nếu có
+    url = url.replace(/\/+$/, '')
+    return url
+  }
+
+  const redirectUrl = `${getURL()}/auth/callback`
+  console.log('Login with Google redirecting to:', redirectUrl)
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/auth/callback`,
+      redirectTo: redirectUrl,
     },
   })
 

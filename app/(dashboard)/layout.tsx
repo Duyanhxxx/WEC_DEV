@@ -1,11 +1,16 @@
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MobileNav } from "@/components/layout/MobileNav"
+import { UserNav } from "@/components/layout/UserNav"
+import { createClient } from "@/lib/supabase/server"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr]">
       <Sidebar />
@@ -18,7 +23,7 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
              {/* Search or Breadcrumbs could go here */}
           </div>
-          {/* User profile dropdown could go here */}
+          <UserNav user={user} />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}

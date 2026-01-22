@@ -29,31 +29,38 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
 
+  console.log(`Middleware check: Path=${path}, User=${user?.email || 'null'}`)
+
+  // Debug log
+  if (path.startsWith('/auth/callback')) {
+      return supabaseResponse
+  }
+
+  // TẠM THỜI TẮT REDIRECT ĐỂ DEBUG
   // Nếu user chưa đăng nhập và cố vào trang bảo vệ (không phải login/register/auth)
+  /*
   if (
     !user &&
     !path.startsWith('/login') &&
     !path.startsWith('/register') &&
     !path.startsWith('/auth')
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    console.log('Middleware: No user, redirecting to login from', path)
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
+  */
 
   // Nếu user ĐÃ đăng nhập mà cố vào trang login hoặc register -> đẩy về dashboard
   if (user && (path.startsWith('/login') || path.startsWith('/register'))) {
+    console.log('Middleware: User found, redirecting to dashboard from', path)
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
