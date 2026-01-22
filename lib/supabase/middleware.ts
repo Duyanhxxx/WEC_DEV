@@ -63,7 +63,19 @@ export async function updateSession(request: NextRequest) {
     console.log('Middleware: User found, redirecting to dashboard from', path)
     const url = request.nextUrl.clone()
     url.pathname = '/'
-    return NextResponse.redirect(url)
+    
+    // Create a redirect response
+    const newResponse = NextResponse.redirect(url)
+    
+    // Copy cookies from supabaseResponse (which might contain refreshed tokens) to the new redirect response
+    // This is crucial because if the token was refreshed in getUser(), supabaseResponse has the new cookies
+    // but NextResponse.redirect creates a fresh response without them.
+    const cookiesToSet = supabaseResponse.cookies.getAll()
+    cookiesToSet.forEach(cookie => {
+        newResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return newResponse
   }
 
   return supabaseResponse

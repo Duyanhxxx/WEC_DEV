@@ -78,10 +78,12 @@ export async function loginWithGoogle() {
   })
 
   if (error) {
+    console.error('Login error:', error)
     redirect('/login?error=' + encodeURIComponent(error.message))
   }
 
   if (data.url) {
+    console.log('Supabase returned OAuth URL:', data.url)
     redirect(data.url)
   }
 }

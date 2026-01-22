@@ -16,10 +16,19 @@ import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 export function AddUserDialog({ classes }: { classes: any[] }) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const [empType, setEmpType] = useState("full-time")
 
   async function onAddStudent(formData: FormData) {
     const student_code = formData.get("student_code")
@@ -50,13 +59,44 @@ export function AddUserDialog({ classes }: { classes: any[] }) {
     const email = formData.get("email")
     const phone = formData.get("phone")
     const subject = formData.get("subject")
+    const employment_type = formData.get("employment_type")
+    const salary_rate = formData.get("salary_rate")
 
     const { error } = await supabase.from("teachers").insert({
         teacher_code,
         name,
         email,
         phone,
-        subject
+        subject,
+        employment_type,
+        salary_rate: salary_rate ? Number(salary_rate) : 0
+    })
+
+    if (!error) {
+        setOpen(false)
+        router.refresh()
+    } else {
+        alert("Lỗi: " + error.message)
+    }
+  }
+
+  async function onAddStaff(formData: FormData) {
+    const staff_code = formData.get("staff_code")
+    const name = formData.get("name")
+    const email = formData.get("email")
+    const phone = formData.get("phone")
+    const role = formData.get("role")
+    const employment_type = formData.get("employment_type")
+    const salary_rate = formData.get("salary_rate")
+
+    const { error } = await supabase.from("staff").insert({
+        staff_code,
+        name,
+        email,
+        phone,
+        role,
+        employment_type,
+        salary_rate: salary_rate ? Number(salary_rate) : 0
     })
 
     if (!error) {
@@ -79,9 +119,10 @@ export function AddUserDialog({ classes }: { classes: any[] }) {
           <DialogTitle>Thêm mới</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="student">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="student">Học sinh</TabsTrigger>
                 <TabsTrigger value="teacher">Giáo viên</TabsTrigger>
+                <TabsTrigger value="staff">Nhân viên</TabsTrigger>
             </TabsList>
             <TabsContent value="student">
                 <form action={onAddStudent} className="space-y-4 pt-4">
@@ -135,7 +176,64 @@ export function AddUserDialog({ classes }: { classes: any[] }) {
                         <Label>Bộ môn</Label>
                         <Input name="subject" placeholder="Toán, Lý, Hóa..." />
                     </div>
+                    <div className="space-y-2">
+                        <Label>Loại hợp đồng</Label>
+                        <Select name="employment_type" defaultValue="full-time" onValueChange={setEmpType}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Chọn loại hợp đồng" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="full-time">Full-time</SelectItem>
+                                <SelectItem value="part-time">Part-time</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>{empType === 'full-time' ? 'Lương cơ bản (VNĐ/tháng)' : 'Lương theo giờ (VNĐ/giờ)'}</Label>
+                        <Input name="salary_rate" type="number" placeholder="0" />
+                    </div>
                     <Button type="submit" className="w-full">Lưu giáo viên</Button>
+                </form>
+            </TabsContent>
+            <TabsContent value="staff">
+                <form action={onAddStaff} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="staff_code">Mã nhân viên</Label>
+                        <Input id="staff_code" name="staff_code" placeholder="NV001" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Họ và tên</Label>
+                        <Input id="name" name="name" placeholder="Nguyễn Văn A" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" placeholder="example@gmail.com" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Số điện thoại</Label>
+                        <Input id="phone" name="phone" placeholder="0912345678" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="role">Vị trí / Chức vụ</Label>
+                        <Input id="role" name="role" placeholder="Kế toán, Bảo vệ..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Loại hợp đồng</Label>
+                        <Select name="employment_type" defaultValue="full-time" onValueChange={setEmpType}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Chọn loại hợp đồng" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="full-time">Full-time</SelectItem>
+                                <SelectItem value="part-time">Part-time</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>{empType === 'full-time' ? 'Lương cơ bản (VNĐ/tháng)' : 'Lương theo giờ (VNĐ/giờ)'}</Label>
+                        <Input name="salary_rate" type="number" placeholder="0" />
+                    </div>
+                    <Button type="submit" className="w-full">Lưu nhân viên</Button>
                 </form>
             </TabsContent>
         </Tabs>

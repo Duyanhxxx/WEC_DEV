@@ -9,6 +9,7 @@ import {
   School,
   DollarSign,
   BarChart3,
+  Banknote,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -25,7 +26,7 @@ export const sidebarItems = [
     icon: Users,
   },
   {
-    title: "Điểm danh",
+    title: "Điểm danh HS",
     href: "/attendance",
     icon: CalendarCheck,
   },
@@ -38,6 +39,11 @@ export const sidebarItems = [
     title: "Thu chi",
     href: "/finance",
     icon: DollarSign,
+  },
+  {
+    title: "Lương & Nhân sự",
+    href: "/payroll",
+    icon: Banknote,
   },
   {
     title: "Báo cáo MKT",

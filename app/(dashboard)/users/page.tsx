@@ -18,25 +18,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { AddUserDialog } from "./add-user-dialog"
+import { UserActions } from "./user-actions"
+import { TeacherActions } from "./teacher-actions"
+import { StaffActions } from "./staff-actions"
 
 export default async function UsersPage() {
   const supabase = await createClient()
 
   const { data: students } = await supabase.from('students').select('*').order('created_at', { ascending: false })
   const { data: teachers } = await supabase.from('teachers').select('*').order('created_at', { ascending: false })
+  const { data: staff } = await supabase.from('staff').select('*').order('created_at', { ascending: false })
   const { data: classes } = await supabase.from('classes').select('id, name').order('name', { ascending: true })
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Quản lý Học sinh / Giáo viên</h1>
+        <h1 className="text-2xl font-bold">Quản lý Học sinh / Giáo viên / Nhân viên</h1>
         <AddUserDialog classes={classes || []} />
       </div>
 
       <Tabs defaultValue="students" className="w-full">
-        <TabsList className="grid w-[400px] grid-cols-2">
+        <TabsList className="grid w-[600px] grid-cols-3">
           <TabsTrigger value="students">Học sinh</TabsTrigger>
           <TabsTrigger value="teachers">Giáo viên</TabsTrigger>
+          <TabsTrigger value="staff">Nhân viên</TabsTrigger>
         </TabsList>
         
         <TabsContent value="students">
@@ -65,12 +70,13 @@ export default async function UsersPage() {
                     <TableHead>Họ và tên</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Số điện thoại</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
                         Chưa có dữ liệu học sinh
                       </TableCell>
                     </TableRow>
@@ -81,6 +87,9 @@ export default async function UsersPage() {
                         <TableCell>{student.name}</TableCell>
                         <TableCell>{student.email}</TableCell>
                         <TableCell>{student.phone}</TableCell>
+                        <TableCell className="text-right">
+                          <UserActions student={student} classes={classes || []} />
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -117,12 +126,13 @@ export default async function UsersPage() {
                     <TableHead>Bộ môn</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Số điện thoại</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {teachers?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         Chưa có dữ liệu giáo viên
                       </TableCell>
                     </TableRow>
@@ -134,6 +144,66 @@ export default async function UsersPage() {
                         <TableCell>{teacher.subject}</TableCell>
                         <TableCell>{teacher.email}</TableCell>
                         <TableCell>{teacher.phone}</TableCell>
+                        <TableCell className="text-right">
+                          <TeacherActions teacher={teacher} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="staff">
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách Nhân viên</CardTitle>
+              <CardDescription>
+                Quản lý thông tin nhân viên (Bảo vệ, Kế toán, Tư vấn...).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                 <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Tìm kiếm nhân viên..."
+                      className="pl-8 sm:w-[300px]"
+                    />
+                 </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mã NV</TableHead>
+                    <TableHead>Họ và tên</TableHead>
+                    <TableHead>Vị trí</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Số điện thoại</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {staff?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        Chưa có dữ liệu nhân viên
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    staff?.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">{s.staff_code}</TableCell>
+                        <TableCell>{s.name}</TableCell>
+                        <TableCell>{s.role}</TableCell>
+                        <TableCell>{s.email}</TableCell>
+                        <TableCell>{s.phone}</TableCell>
+                        <TableCell className="text-right">
+                          <StaffActions staff={s} />
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

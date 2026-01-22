@@ -98,7 +98,9 @@ function LoginForm() {
         </form>
         <div className="text-center text-sm">
            Chưa có tài khoản?{' '}
-           <Link href="/register" className="underline">Đăng ký ngay</Link>
+           <Link href="/register" className="underline">
+             Đăng ký ngay
+           </Link>
         </div>
       </div>
   )

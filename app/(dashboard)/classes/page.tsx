@@ -14,9 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Pencil, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { AddClassDialog } from "./add-class-dialog"
+import { ClassActions } from "./class-actions"
 
 export default async function ClassesPage() {
   const supabase = await createClient()
@@ -58,12 +58,7 @@ export default async function ClassesPage() {
                     <TableCell>Khối {cls.grade}</TableCell>
                     <TableCell>{cls.teacher || 'Chưa phân công'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <ClassActions cls={cls} />
                     </TableCell>
                   </TableRow>
                 ))

@@ -17,6 +17,7 @@ import { ArrowDownRight, ArrowUpRight, DollarSign } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/server"
 import { AddTransactionDialog } from "./add-transaction-dialog"
+import { TransactionActions } from "./transaction-actions"
 import { format } from "date-fns"
 
 export default async function FinancePage() {
@@ -104,12 +105,13 @@ export default async function FinancePage() {
                 <TableHead>Nội dung</TableHead>
                 <TableHead>Loại</TableHead>
                 <TableHead className="text-right">Số tiền</TableHead>
+                <TableHead className="text-right">Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions?.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">Chưa có giao dịch nào</TableCell>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">Chưa có giao dịch nào</TableCell>
                  </TableRow>
               ) : (
                 transactions?.map((transaction) => (
@@ -131,6 +133,9 @@ export default async function FinancePage() {
                         transaction.type === "income" ? "text-green-600" : "text-red-600"
                     )}>
                         {transaction.type === "income" ? "+" : "-"}{Number(transaction.amount).toLocaleString('vi-VN')}₫
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <TransactionActions transaction={transaction} />
                     </TableCell>
                     </TableRow>
                 ))
