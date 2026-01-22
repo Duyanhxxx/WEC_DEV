@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Loader2 } from "lucide-react"
-import { format, startOfMonth, endOfMonth } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
@@ -42,6 +42,11 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
   
   const [saving, setSaving] = useState(false)
   
+  // History State
+  const [historyMonth, setHistoryMonth] = useState<Date>(new Date())
+  const [teacherHistory, setTeacherHistory] = useState<any[]>([])
+  const [staffHistory, setStaffHistory] = useState<any[]>([])
+
   // Salary Report State
   const [reportMonth, setReportMonth] = useState<string>(format(new Date(), 'yyyy-MM'))
   const [teacherSalaryData, setTeacherSalaryData] = useState<any[]>([])
@@ -188,6 +193,33 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
     }
   }
 
+  // --- History Logic ---
+  useEffect(() => {
+    async function fetchHistory() {
+      const start = startOfMonth(historyMonth)
+      const end = endOfMonth(historyMonth)
+      const startDateStr = format(start, 'yyyy-MM-dd')
+      const endDateStr = format(end, 'yyyy-MM-dd')
+
+      // Fetch Teacher History
+      const { data: tData } = await supabase
+        .from('teacher_attendance')
+        .select('*')
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
+      setTeacherHistory(tData || [])
+
+      // Fetch Staff History
+      const { data: sData } = await supabase
+        .from('staff_attendance')
+        .select('*')
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
+      setStaffHistory(sData || [])
+    }
+    fetchHistory()
+  }, [historyMonth, supabase])
+
   // --- Salary Logic ---
 
   useEffect(() => {
@@ -260,6 +292,76 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
   }, [reportMonth, teachers, staff, supabase])
 
   // --- Render Helpers ---
+
+  const renderHistoryTable = (people: any[], historyData: any[], idField: string) => {
+    const daysInMonth = eachDayOfInterval({
+        start: startOfMonth(historyMonth),
+        end: endOfMonth(historyMonth)
+    })
+
+    return (
+        <div className="overflow-x-auto">
+            <Table className="border-collapse border">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="min-w-[150px] sticky left-0 bg-background z-10 border-r">Họ tên</TableHead>
+                        {daysInMonth.map(day => (
+                            <TableHead key={day.toString()} className="text-center p-1 min-w-[30px] text-xs border-r h-8">
+                                {format(day, 'd')}
+                            </TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {people.map(person => (
+                        <TableRow key={person.id}>
+                            <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">{person.name}</TableCell>
+                            {daysInMonth.map(day => {
+                                const dateStr = format(day, 'yyyy-MM-dd')
+                                const record = historyData.find(
+                                    r => r[idField] === person.id && r.date === dateStr
+                                )
+                                
+                                let content = ""
+                                let bgColor = ""
+                                let textColor = ""
+
+                                if (record) {
+                                    if (person.employment_type === 'full-time') {
+                                        if (record.status === 'present') {
+                                            content = "✓"
+                                            bgColor = "bg-green-50"
+                                            textColor = "text-green-600 font-bold"
+                                        } else {
+                                            content = "x"
+                                            bgColor = "bg-red-50"
+                                            textColor = "text-red-400"
+                                        }
+                                    } else {
+                                        // Part-time
+                                        if (record.hours_worked > 0) {
+                                            content = `${record.hours_worked}h`
+                                            bgColor = "bg-blue-50"
+                                            textColor = "text-blue-600 font-medium"
+                                        } else {
+                                            content = "-"
+                                        }
+                                    }
+                                }
+
+                                return (
+                                    <TableCell key={day.toString()} className={cn("text-center p-1 border-r border-b h-8", bgColor)}>
+                                        <span className={textColor}>{content}</span>
+                                    </TableCell>
+                                )
+                            })}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    )
+  }
 
   const renderAttendanceTable = (people: any[], attendanceMap: Record<string, any>, isTeacher: boolean) => (
     <Table>
@@ -360,8 +462,9 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
       <h1 className="text-2xl font-bold">Quản lý Chấm công & Lương</h1>
       
       <Tabs defaultValue="attendance" className="w-full">
-        <TabsList className="grid w-[400px] grid-cols-2">
+        <TabsList className="grid w-[600px] grid-cols-3">
           <TabsTrigger value="attendance">Chấm công hàng ngày</TabsTrigger>
+          <TabsTrigger value="history">Lịch sử chấm công</TabsTrigger>
           <TabsTrigger value="salary">Bảng lương</TabsTrigger>
         </TabsList>
 
@@ -405,6 +508,46 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
                 </Tabs>
              </CardContent>
            </Card>
+        </TabsContent>
+
+        <TabsContent value="history">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Lịch sử chấm công</CardTitle>
+                            <CardDescription>Theo dõi ngày công trong tháng.</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => {
+                                const newDate = new Date(historyMonth)
+                                newDate.setMonth(newDate.getMonth() - 1)
+                                setHistoryMonth(newDate)
+                            }}>{"<"}</Button>
+                            <div className="font-medium w-[100px] text-center">{format(historyMonth, 'MM/yyyy')}</div>
+                            <Button variant="outline" size="sm" onClick={() => {
+                                const newDate = new Date(historyMonth)
+                                newDate.setMonth(newDate.getMonth() + 1)
+                                setHistoryMonth(newDate)
+                            }}>{">"}</Button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="teachers">
+                        <TabsList>
+                            <TabsTrigger value="teachers">Giáo viên</TabsTrigger>
+                            <TabsTrigger value="staff">Nhân viên</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="teachers">
+                            {renderHistoryTable(teachers, teacherHistory, 'teacher_id')}
+                        </TabsContent>
+                        <TabsContent value="staff">
+                            {renderHistoryTable(staff, staffHistory, 'staff_id')}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="salary">
