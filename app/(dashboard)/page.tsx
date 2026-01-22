@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, School, DollarSign, CalendarCheck } from "lucide-react"
+import { Users, School, DollarSign, CalendarCheck, UserCog } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardPage() {
@@ -10,13 +10,19 @@ export default async function DashboardPage() {
     { count: studentsCount },
     { count: classesCount },
     { count: attendanceCount }, // Logic might need adjustment for "today's attendance"
-    { data: transactions }
+    { data: transactions },
+    { count: staffCount },
+    { count: teacherCount }
   ] = await Promise.all([
     supabase.from('students').select('*', { count: 'exact', head: true }),
     supabase.from('classes').select('*', { count: 'exact', head: true }),
     supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('date', new Date().toISOString().split('T')[0]),
-    supabase.from('transactions').select('amount, type').gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+    supabase.from('transactions').select('amount, type').gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+    supabase.from('staff').select('*', { count: 'exact', head: true }),
+    supabase.from('teachers').select('*', { count: 'exact', head: true })
   ])
+
+  const totalStaff = (staffCount || 0) + (teacherCount || 0)
 
   // Calculate revenue
   const totalRevenue = transactions?.reduce((acc, curr) => {
@@ -35,6 +41,16 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{studentsCount || 0}</div>
             <p className="text-xs text-muted-foreground">Toàn hệ thống</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng số Nhân sự</CardTitle>
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalStaff}</div>
+            <p className="text-xs text-muted-foreground">Giáo viên & Nhân viên</p>
           </CardContent>
         </Card>
         <Card>
