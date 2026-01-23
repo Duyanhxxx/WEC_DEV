@@ -22,37 +22,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Loader2 } from "lucide-react"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Calendar } from "@/components/ui/calendar"
 
+interface Employee {
+  id: string
+  name: string
+  employment_type: 'full-time' | 'part-time'
+  salary_rate: number
+}
+
+interface AttendanceRecord {
+  id?: string
+  date: string
+  status: string
+  hours_worked: number
+  note?: string
+  teacher_id?: string
+  staff_id?: string
+}
+
 interface PayrollClientProps {
-  teachers: any[]
-  staff: any[]
+  teachers: Employee[]
+  staff: Employee[]
 }
 
 export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   
   // Attendance State
-  const [teacherAttendance, setTeacherAttendance] = useState<Record<string, any>>({})
-  const [staffAttendance, setStaffAttendance] = useState<Record<string, any>>({})
+  const [teacherAttendance, setTeacherAttendance] = useState<Record<string, AttendanceRecord>>({})
+  const [staffAttendance, setStaffAttendance] = useState<Record<string, AttendanceRecord>>({})
   
   const [saving, setSaving] = useState(false)
   
   // History State
   const [historyMonth, setHistoryMonth] = useState<Date>(new Date())
-  const [teacherHistory, setTeacherHistory] = useState<any[]>([])
-  const [staffHistory, setStaffHistory] = useState<any[]>([])
+  const [teacherHistory, setTeacherHistory] = useState<AttendanceRecord[]>([])
+  const [staffHistory, setStaffHistory] = useState<AttendanceRecord[]>([])
 
   // Salary Report State
   const [reportMonth, setReportMonth] = useState<string>(format(new Date(), 'yyyy-MM'))
   const [teacherSalaryData, setTeacherSalaryData] = useState<any[]>([])
   const [staffSalaryData, setStaffSalaryData] = useState<any[]>([])
   const [calculating, setCalculating] = useState(false)
-
+  
   const supabase = createClient()
 
   // --- Attendance Logic ---
@@ -68,10 +85,10 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
       .select('*')
       .eq('date', formattedDate)
     
-    const newTeacherAttendance : Record<string, any> = {}
+    const newTeacherAttendance : Record<string, AttendanceRecord> = {}
     if (tData) {
-      tData.forEach((record) => {
-        newTeacherAttendance[record.teacher_id] = record
+      (tData as AttendanceRecord[]).forEach((record) => {
+        if (record.teacher_id) newTeacherAttendance[record.teacher_id] = record
       })
     }
     setTeacherAttendance(newTeacherAttendance)
@@ -82,10 +99,10 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
       .select('*')
       .eq('date', formattedDate)
 
-    const newStaffAttendance : Record<string, any> = {}
+    const newStaffAttendance : Record<string, AttendanceRecord> = {}
     if (sData) {
-      sData.forEach((record) => {
-        newStaffAttendance[record.staff_id] = record
+      (sData as AttendanceRecord[]).forEach((record) => {
+        if (record.staff_id) newStaffAttendance[record.staff_id] = record
       })
     }
     setStaffAttendance(newStaffAttendance)
@@ -237,7 +254,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
         .lte('date', format(endDate, 'yyyy-MM-dd'))
 
       const tReport = teachers.map(t => {
-        const logs = tLogs?.filter(l => l.teacher_id === t.id) || []
+        const logs = (tLogs as AttendanceRecord[])?.filter(l => l.teacher_id === t.id) || []
         let totalHours = 0
         let workDays = 0
         logs.forEach(l => {
@@ -264,7 +281,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
         .lte('date', format(endDate, 'yyyy-MM-dd'))
 
       const sReport = staff.map(s => {
-        const logs = sLogs?.filter(l => l.staff_id === s.id) || []
+        const logs = (sLogs as AttendanceRecord[])?.filter(l => l.staff_id === s.id) || []
         let totalHours = 0
         let workDays = 0
         logs.forEach(l => {
@@ -293,7 +310,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
 
   // --- Render Helpers ---
 
-  const renderHistoryTable = (people: any[], historyData: any[], idField: string) => {
+  const renderHistoryTable = (people: Employee[], historyData: AttendanceRecord[], idField: keyof AttendanceRecord) => {
     const daysInMonth = eachDayOfInterval({
         start: startOfMonth(historyMonth),
         end: endOfMonth(historyMonth)
@@ -363,7 +380,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
     )
   }
 
-  const renderAttendanceTable = (people: any[], attendanceMap: Record<string, any>, isTeacher: boolean) => (
+  const renderAttendanceTable = (people: Employee[], attendanceMap: Record<string, AttendanceRecord>, isTeacher: boolean) => (
     <Table>
         <TableHeader>
             <TableRow>
@@ -380,7 +397,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
                 const hours = record.hours_worked || 0
                 return (
                     <TableRow key={p.id}>
-                        <TableCell>{isTeacher ? p.teacher_code : p.staff_code}</TableCell>
+                        <TableCell>{isTeacher ? (p as any).teacher_code : (p as any).staff_code}</TableCell>
                         <TableCell>{p.name}</TableCell>
                         <TableCell>
                             <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", 
@@ -418,7 +435,7 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
     </Table>
   )
 
-  const renderSalaryTable = (data: any[]) => (
+  const renderSalaryTable = (data: (Employee & { workDays: number; totalHours: number; totalSalary: number })[]) => (
     <Table>
         <TableHeader>
             <TableRow>
@@ -567,18 +584,24 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
                         />
                     </div>
                     
-                    <Tabs defaultValue="teachers">
-                        <TabsList>
-                            <TabsTrigger value="teachers">Giáo viên</TabsTrigger>
-                            <TabsTrigger value="staff">Nhân viên</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="teachers">
-                            {renderSalaryTable(teacherSalaryData)}
-                        </TabsContent>
-                        <TabsContent value="staff">
-                            {renderSalaryTable(staffSalaryData)}
-                        </TabsContent>
-                    </Tabs>
+                    {calculating ? (
+                        <div className="flex h-[200px] items-center justify-center text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <Tabs defaultValue="teachers">
+                            <TabsList>
+                                <TabsTrigger value="teachers">Giáo viên</TabsTrigger>
+                                <TabsTrigger value="staff">Nhân viên</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="teachers">
+                                {renderSalaryTable(teacherSalaryData)}
+                            </TabsContent>
+                            <TabsContent value="staff">
+                                {renderSalaryTable(staffSalaryData)}
+                            </TabsContent>
+                        </Tabs>
+                    )}
                 </CardContent>
             </Card>
         </TabsContent>

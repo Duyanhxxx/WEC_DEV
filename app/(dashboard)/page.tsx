@@ -1,37 +1,56 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, School, DollarSign, CalendarCheck, UserCog } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { Overview } from "@/app/(dashboard)/components/overview"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const now = new Date()
+  const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
   // Fetch counts in parallel
   const [
     { count: studentsCount },
     { count: classesCount },
-    { count: attendanceCount }, // Logic might need adjustment for "today's attendance"
+    { count: attendanceCount },
     { data: transactions },
     { count: staffCount },
     { count: teacherCount }
   ] = await Promise.all([
     supabase.from('students').select('*', { count: 'exact', head: true }),
     supabase.from('classes').select('*', { count: 'exact', head: true }),
-    supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('date', new Date().toISOString().split('T')[0]),
-    supabase.from('transactions').select('amount, type').gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+    supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('date', now.toISOString().split('T')[0]),
+    supabase.from('transactions').select('amount, type, date').gte('date', startOfYear),
     supabase.from('staff').select('*', { count: 'exact', head: true }),
     supabase.from('teachers').select('*', { count: 'exact', head: true })
   ])
 
   const totalStaff = (staffCount || 0) + (teacherCount || 0)
 
-  // Calculate revenue
+  // Calculate revenue for current month
   const totalRevenue = transactions?.reduce((acc, curr) => {
-    return curr.type === 'income' ? acc + Number(curr.amount) : acc
+    const isThisMonth = curr.date >= startOfMonth
+    return (isThisMonth && curr.type === 'income') ? acc + Number(curr.amount) : acc
   }, 0) || 0
 
+  // Prepare graph data
+  const monthlyRevenue = new Array(12).fill(0)
+  transactions?.forEach(t => {
+    if (t.type === 'income') {
+      const month = new Date(t.date).getMonth()
+      monthlyRevenue[month] += Number(t.amount)
+    }
+  })
+
+  const graphData = monthlyRevenue.map((total, index) => ({
+    name: `T${index + 1}`,
+    total
+  }))
+
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="flex flex-col gap-4 animate-in fade-in-50 duration-500">
+      {/* <h1 className="text-2xl font-bold">Dashboard</h1> - Removed as it's now in Breadcrumbs/Header */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -89,12 +108,10 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Tổng quan</CardTitle>
+            <CardTitle>Tổng quan doanh thu</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-             <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-               Biểu đồ doanh thu (Chưa có dữ liệu)
-             </div>
+             <Overview data={graphData} />
           </CardContent>
         </Card>
         <Card className="col-span-3">

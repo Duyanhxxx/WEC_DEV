@@ -25,9 +25,17 @@ import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+interface Transaction {
+  id: string
+  date: string
+  description: string
+  amount: number
+  type: 'income' | 'expense'
+}
+
 export default function FinanceClient() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'))
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
   
   const supabase = createClient()
@@ -39,7 +47,7 @@ export default function FinanceClient() {
       const startDate = startOfMonth(new Date(year, month - 1))
       const endDate = endOfMonth(new Date(year, month - 1))
       
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('transactions')
         .select('*')
         .gte('date', format(startDate, 'yyyy-MM-dd'))
@@ -47,7 +55,7 @@ export default function FinanceClient() {
         .order('date', { ascending: false })
 
       if (data) {
-        setTransactions(data)
+        setTransactions(data as Transaction[])
       }
       setLoading(false)
     }
