@@ -31,6 +31,7 @@ interface Transaction {
   description: string
   amount: number
   type: 'income' | 'expense'
+  created_by?: string
 }
 
 export default function FinanceClient() {
@@ -151,6 +152,7 @@ export default function FinanceClient() {
                 <TableRow>
                     <TableHead>Ngày</TableHead>
                     <TableHead>Nội dung</TableHead>
+                    <TableHead>Người tạo</TableHead>
                     <TableHead>Loại</TableHead>
                     <TableHead className="text-right">Số tiền</TableHead>
                     <TableHead className="text-right">Hành động</TableHead>
@@ -166,6 +168,7 @@ export default function FinanceClient() {
                         <TableRow key={transaction.id}>
                         <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>{transaction.description}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{transaction.created_by || '-'}</TableCell>
                         <TableCell>
                             <span className={cn(
                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",

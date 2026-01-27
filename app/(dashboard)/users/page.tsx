@@ -21,12 +21,16 @@ import { AddUserDialog } from "./add-user-dialog"
 import { UserActions } from "./user-actions"
 import { TeacherActions } from "./teacher-actions"
 import { StaffActions } from "./staff-actions"
+import { getUserRole } from "@/lib/auth"
 
 export default async function UsersPage() {
   const supabase = await createClient()
+  const role = await getUserRole()
 
   const { data: students } = await supabase.from('students').select('*').order('created_at', { ascending: false })
   const { data: teachers } = await supabase.from('teachers').select('*').order('created_at', { ascending: false })
+  // Only fetch staff if admin, or just fetch and hide. Fetching and hiding is safer to avoid undefined errors if code assumes data exists, but RLS should handle it. 
+  // For UI clarity, let's just fetch it, but RLS might block it if we set it up that way. The user only asked to hide the management section.
   const { data: staff } = await supabase.from('staff').select('*').order('created_at', { ascending: false })
   const { data: classes } = await supabase.from('classes').select('id, name').order('name', { ascending: true })
 
@@ -34,14 +38,14 @@ export default async function UsersPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Quản lý Học sinh / Giáo viên / Nhân viên</h1>
-        <AddUserDialog classes={classes || []} />
+        <AddUserDialog classes={classes || []} role={role || 'staff'} />
       </div>
 
       <Tabs defaultValue="students" className="w-full">
-        <TabsList className="grid w-[600px] grid-cols-3">
+        <TabsList className={`grid w-[600px] ${role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="students">Học sinh</TabsTrigger>
           <TabsTrigger value="teachers">Giáo viên</TabsTrigger>
-          <TabsTrigger value="staff">Nhân viên</TabsTrigger>
+          {role === 'admin' && <TabsTrigger value="staff">Nhân viên</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="students">

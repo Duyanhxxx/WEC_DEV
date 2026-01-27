@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Header } from "@/components/layout/Header"
 import { createClient } from "@/lib/supabase/server"
+import { getUserRole } from "@/lib/auth"
 
 export default async function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const role = await getUserRole()
 
   if (!user) {
     // Fallback if middleware misses it (though middleware should catch it)
@@ -21,9 +23,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr]">
-      <Sidebar />
+      <Sidebar role={role || 'staff'} />
       <div className="flex flex-col">
-        <Header user={user} />
+        <Header user={user} role={role || 'staff'} />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
         </main>

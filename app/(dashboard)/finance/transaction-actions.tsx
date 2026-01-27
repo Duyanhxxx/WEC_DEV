@@ -104,6 +104,12 @@ export function TransactionActions({ transaction }: TransactionActionsProps) {
               <Input id="description" name="description" required className="col-span-3" defaultValue={transaction.description} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="created_by" className="text-right">
+                Người tạo
+              </Label>
+              <Input id="created_by" name="created_by" required className="col-span-3 bg-muted" defaultValue={transaction.created_by} placeholder="Nhập tên người tạo..." disabled />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="amount" className="text-right">
                 Số tiền
               </Label>

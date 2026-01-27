@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function AddUserDialog({ classes }: { classes: any[] }) {
+export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], role?: string }) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -116,126 +116,137 @@ export function AddUserDialog({ classes }: { classes: any[] }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Thêm mới</DialogTitle>
+          <DialogTitle>Thêm mới thành viên</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="student">
-            <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="student">Học sinh</TabsTrigger>
-                <TabsTrigger value="teacher">Giáo viên</TabsTrigger>
-                <TabsTrigger value="staff">Nhân viên</TabsTrigger>
-            </TabsList>
-            <TabsContent value="student">
-                <form action={onAddStudent} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                        <Label>Mã học sinh</Label>
-                        <Input name="student_code" required placeholder="HS001" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Họ và tên</Label>
-                        <Input name="name" required placeholder="Nguyễn Văn A" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input name="email" type="email" placeholder="email@example.com" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Số điện thoại</Label>
-                        <Input name="phone" placeholder="098..." />
-                    </div>
-                    <div className="space-y-2">
-                         <Label>Lớp</Label>
-                         <select name="class_id" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                            <option value="">Chọn lớp</option>
-                            {classes.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                         </select>
-                    </div>
-                    <Button type="submit" className="w-full">Lưu học sinh</Button>
-                </form>
-            </TabsContent>
-            <TabsContent value="teacher">
-                <form action={onAddTeacher} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                        <Label>Mã giáo viên</Label>
-                        <Input name="teacher_code" required placeholder="GV001" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Họ và tên</Label>
-                        <Input name="name" required placeholder="Trần Thị B" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input name="email" type="email" placeholder="email@example.com" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Số điện thoại</Label>
-                        <Input name="phone" placeholder="098..." />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Bộ môn</Label>
-                        <Input name="subject" placeholder="Toán, Lý, Hóa..." />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Loại hợp đồng</Label>
-                        <Select name="employment_type" defaultValue="full-time" onValueChange={setEmpType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Chọn loại hợp đồng" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="full-time">Full-time</SelectItem>
-                                <SelectItem value="part-time">Part-time</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>{empType === 'full-time' ? 'Lương cơ bản (VNĐ/tháng)' : 'Lương theo giờ (VNĐ/giờ)'}</Label>
-                        <Input name="salary_rate" type="number" placeholder="0" />
-                    </div>
-                    <Button type="submit" className="w-full">Lưu giáo viên</Button>
-                </form>
-            </TabsContent>
-            <TabsContent value="staff">
-                <form action={onAddStaff} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="staff_code">Mã nhân viên</Label>
-                        <Input id="staff_code" name="staff_code" placeholder="NV001" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Họ và tên</Label>
-                        <Input id="name" name="name" placeholder="Nguyễn Văn A" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" placeholder="example@gmail.com" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Số điện thoại</Label>
-                        <Input id="phone" name="phone" placeholder="0912345678" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="role">Vị trí / Chức vụ</Label>
-                        <Input id="role" name="role" placeholder="Kế toán, Bảo vệ..." />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Loại hợp đồng</Label>
-                        <Select name="employment_type" defaultValue="full-time" onValueChange={setEmpType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Chọn loại hợp đồng" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="full-time">Full-time</SelectItem>
-                                <SelectItem value="part-time">Part-time</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>{empType === 'full-time' ? 'Lương cơ bản (VNĐ/tháng)' : 'Lương theo giờ (VNĐ/giờ)'}</Label>
-                        <Input name="salary_rate" type="number" placeholder="0" />
-                    </div>
-                    <Button type="submit" className="w-full">Lưu nhân viên</Button>
-                </form>
-            </TabsContent>
+        <Tabs defaultValue="student" className="w-full">
+          <TabsList className={`grid w-full ${role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <TabsTrigger value="student">Học sinh</TabsTrigger>
+            <TabsTrigger value="teacher">Giáo viên</TabsTrigger>
+            {role === 'admin' && <TabsTrigger value="staff">Nhân viên</TabsTrigger>}
+          </TabsList>
+          
+          <TabsContent value="student">
+            <form action={onAddStudent} className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="student_code">Mã học sinh</Label>
+                <Input id="student_code" name="student_code" placeholder="HS001" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Họ và tên</Label>
+                <Input id="name" name="name" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Số điện thoại</Label>
+                <Input id="phone" name="phone" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="class_id">Lớp học</Label>
+                <Select name="class_id">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn lớp học" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit">Lưu thông tin</Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="teacher">
+            <form action={onAddTeacher} className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="teacher_code">Mã giáo viên</Label>
+                <Input id="teacher_code" name="teacher_code" placeholder="GV001" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Họ và tên</Label>
+                <Input id="name" name="name" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Số điện thoại</Label>
+                <Input id="phone" name="phone" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="subject">Bộ môn</Label>
+                <Input id="subject" name="subject" />
+              </div>
+              <div className="grid gap-2">
+                 <Label htmlFor="employment_type">Loại hợp đồng</Label>
+                 <Select name="employment_type" defaultValue="full-time">
+                    <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại hợp đồng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="full-time">Full-time</SelectItem>
+                        <SelectItem value="part-time">Part-time</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+              <div className="grid gap-2">
+                 <Label htmlFor="salary_rate">Mức lương cơ bản</Label>
+                 <Input id="salary_rate" name="salary_rate" type="number" />
+              </div>
+              <Button type="submit">Lưu thông tin</Button>
+            </form>
+          </TabsContent>
+
+          {role === 'admin' && (
+          <TabsContent value="staff">
+            <form action={onAddStaff} className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="staff_code">Mã nhân viên</Label>
+                <Input id="staff_code" name="staff_code" placeholder="NV001" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Họ và tên</Label>
+                <Input id="name" name="name" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Số điện thoại</Label>
+                <Input id="phone" name="phone" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Vị trí / Chức vụ</Label>
+                <Input id="role" name="role" placeholder="Bảo vệ / Kế toán..." />
+              </div>
+              <div className="grid gap-2">
+                 <Label htmlFor="employment_type">Loại hợp đồng</Label>
+                 <Select name="employment_type" defaultValue="full-time">
+                    <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại hợp đồng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="full-time">Full-time</SelectItem>
+                        <SelectItem value="part-time">Part-time</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+              <div className="grid gap-2">
+                 <Label htmlFor="salary_rate">Mức lương cơ bản</Label>
+                 <Input id="salary_rate" name="salary_rate" type="number" />
+              </div>
+              <Button type="submit">Lưu thông tin</Button>
+            </form>
+          </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>

@@ -1,14 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
-import PayrollClient from "./payroll-client"
+import TimesheetClient from "./timesheet-client"
 import { getUserRole } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
-export default async function PayrollPage() {
+export default async function TimesheetPage() {
   const role = await getUserRole()
-  if (role !== 'admin') {
-    redirect('/')
-  }
-
+  // Allowed for everyone
+  
   const supabase = await createClient()
   
   const { data: teachers } = await supabase
@@ -21,5 +19,5 @@ export default async function PayrollPage() {
     .select('*')
     .order('name', { ascending: true })
 
-  return <PayrollClient teachers={teachers || []} staff={staff || []} />
+  return <TimesheetClient teachers={teachers || []} staff={staff || []} />
 }

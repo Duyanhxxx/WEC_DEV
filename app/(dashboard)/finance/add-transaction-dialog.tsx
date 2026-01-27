@@ -38,13 +38,15 @@ export function AddTransactionDialog() {
     const description = formData.get("description") as string
     const amount = parseFloat(formData.get("amount") as string)
     const type = formData.get("type") as string
+    const created_by = formData.get("created_by") as string
 
     try {
       const { error } = await supabase.from("transactions").insert({
           date,
           description,
           amount,
-          type
+          type,
+          created_by
       })
 
       if (error) throw error
@@ -90,6 +92,12 @@ export function AddTransactionDialog() {
               Số tiền
             </Label>
             <Input id="amount" name="amount" type="number" required className="col-span-3" placeholder="0" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="created_by" className="text-right">
+              Người tạo
+            </Label>
+            <Input id="created_by" name="created_by" required className="col-span-3" placeholder="Nhập tên người tạo..." />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="type" className="text-right">

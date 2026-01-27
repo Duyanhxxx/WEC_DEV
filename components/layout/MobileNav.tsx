@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { SidebarContent } from "./SidebarContent"
 import { useState } from "react"
 
-export function MobileNav() {
+export function MobileNav({ role }: { role?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -18,7 +18,7 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[240px] p-0">
-        <SidebarContent setOpen={setOpen} />
+        <SidebarContent setOpen={setOpen} role={role} />
       </SheetContent>
     </Sheet>
   )

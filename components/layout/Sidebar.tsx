@@ -1,9 +1,13 @@
 import { SidebarContent } from "./SidebarContent"
 
-export function Sidebar() {
+interface SidebarProps {
+  role?: string
+}
+
+export function Sidebar({ role }: SidebarProps) {
   return (
     <div className="hidden border-r bg-muted/40 md:block h-full">
-      <SidebarContent />
+      <SidebarContent role={role} />
     </div>
   )
 }

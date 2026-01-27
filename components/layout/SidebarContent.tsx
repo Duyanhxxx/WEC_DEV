@@ -10,6 +10,7 @@ import {
   DollarSign,
   BarChart3,
   Banknote,
+  CalendarClock,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -41,7 +42,12 @@ export const sidebarItems = [
     icon: DollarSign,
   },
   {
-    title: "Lương & Nhân sự",
+    title: "Chấm công",
+    href: "/timesheet",
+    icon: CalendarClock,
+  },
+  {
+    title: "Lương",
     href: "/payroll",
     icon: Banknote,
   },
@@ -54,10 +60,19 @@ export const sidebarItems = [
 
 interface SidebarContentProps {
   setOpen?: (open: boolean) => void
+  role?: string
 }
 
-export function SidebarContent({ setOpen }: SidebarContentProps) {
+export function SidebarContent({ setOpen, role = 'staff' }: SidebarContentProps) {
   const pathname = usePathname()
+
+  const filteredItems = sidebarItems.filter(item => {
+    // Hide Payroll from non-admins
+    if (role !== 'admin' && item.href === '/payroll') {
+      return false
+    }
+    return true
+  })
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -69,7 +84,7 @@ export function SidebarContent({ setOpen }: SidebarContentProps) {
       </div>
       <div className="flex-1 overflow-auto py-2">
         <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-          {sidebarItems.map((item) => (
+          {filteredItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

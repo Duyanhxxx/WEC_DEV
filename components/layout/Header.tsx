@@ -22,11 +22,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+import { Badge } from "@/components/ui/badge"
+
 interface HeaderProps {
   user: User | null
+  role?: string
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, role }: HeaderProps) {
   const pathname = usePathname()
   const paths = pathname.split('/').filter(Boolean)
 
@@ -53,27 +56,32 @@ export function Header({ user }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       <div className="md:hidden">
-        <MobileNav />
+        <MobileNav role={role} />
       </div>
-      <Breadcrumb className="hidden md:flex">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          {breadcrumbs.map((crumb) => (
-            <div key={crumb.href} className="flex items-center gap-1.5">
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {crumb.isLast ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </div>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      <div className="hidden md:flex items-center gap-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            {breadcrumbs.map((crumb) => (
+              <div key={crumb.href} className="flex items-center gap-1.5">
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  {crumb.isLast ? (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+              </div>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+        {role === 'admin' && (
+           <Badge variant="default" className="bg-red-600 hover:bg-red-700">Admin Mode</Badge>
+        )}
+      </div>
       <div className="relative ml-auto flex-1 md:grow-0">
         {/* Search input could go here */}
       </div>
