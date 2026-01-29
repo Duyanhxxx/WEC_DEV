@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -35,11 +36,13 @@ import { createClient } from "@/lib/supabase/client"
 
 interface AttendanceClientProps {
   classes: any[]
+  subjects: any[]
 }
 
-export default function AttendanceClient({ classes }: AttendanceClientProps) {
+export default function AttendanceClient({ classes, subjects }: AttendanceClientProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [selectedClass, setSelectedClass] = useState<string>("")
+  const [selectedSubject, setSelectedSubject] = useState<string>("homeroom") // "homeroom" or subject_id
   const [students, setStudents] = useState<any[]>([])
   const [attendanceData, setAttendanceData] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(false)
@@ -51,7 +54,7 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
 
   const supabase = createClient()
 
-  // Fetch students when class changes
+  // Fetch students when class or subject changes
   useEffect(() => {
     async function fetchStudents() {
       if (!selectedClass) {
@@ -59,32 +62,62 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
         return
       }
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // 1. Fetch all students in class
+      const { data: allStudents, error } = await supabase
         .from('students')
         .select('*')
         .eq('class_id', selectedClass)
         .order('name', { ascending: true })
       
-      if (data) {
-        setStudents(data)
+      if (allStudents) {
+        // 2. Filter by subject enrollment if a subject is selected
+        if (selectedSubject && selectedSubject !== "homeroom") {
+             const { data: enrollments } = await supabase
+                .from('student_subjects')
+                .select('student_id')
+                .eq('subject_id', selectedSubject)
+                .in('student_id', allStudents.map(s => s.id))
+             
+             if (enrollments) {
+                 const enrolledIds = enrollments.map(e => e.student_id)
+                 // If there are enrollments, filter. 
+                 // If NO enrollments found for this subject+class combination, 
+                 // it implies no one is assigned. We return empty list.
+                 setStudents(allStudents.filter(s => enrolledIds.includes(s.id)))
+             } else {
+                 setStudents([]) 
+             }
+        } else {
+            // Homeroom - show all students in class
+            setStudents(allStudents)
+        }
       }
       setLoading(false)
     }
     fetchStudents()
-  }, [selectedClass, supabase])
+  }, [selectedClass, selectedSubject, supabase])
 
-  // Fetch attendance when class or date changes
+  // Fetch attendance when class, subject or date changes
   useEffect(() => {
     async function fetchAttendance() {
       if (!selectedClass || !date) return
       
       const formattedDate = format(date, 'yyyy-MM-dd')
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('attendance')
         .select('*')
         .eq('class_id', selectedClass)
         .eq('date', formattedDate)
+      
+      if (selectedSubject && selectedSubject !== "homeroom") {
+          query = query.eq('subject_id', selectedSubject)
+      } else {
+          query = query.is('subject_id', null)
+      }
+
+      const { data, error } = await query
       
       const newAttendanceData : Record<string, any> = {}
       if (data) {
@@ -95,7 +128,7 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
       setAttendanceData(newAttendanceData)
     }
     fetchAttendance()
-  }, [selectedClass, date, supabase])
+  }, [selectedClass, selectedSubject, date, supabase])
 
   // Fetch Monthly History
   useEffect(() => {
@@ -105,12 +138,20 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
       const start = startOfMonth(historyMonth)
       const end = endOfMonth(historyMonth)
 
-      const { data } = await supabase
+      let query = supabase
         .from('attendance')
         .select('*')
         .eq('class_id', selectedClass)
         .gte('date', format(start, 'yyyy-MM-dd'))
         .lte('date', format(end, 'yyyy-MM-dd'))
+
+      if (selectedSubject && selectedSubject !== "homeroom") {
+          query = query.eq('subject_id', selectedSubject)
+      } else {
+          query = query.is('subject_id', null)
+      }
+
+      const { data } = await query
       
       if (data) {
         setMonthlyAttendance(data)
@@ -119,7 +160,7 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
       }
     }
     fetchHistory()
-  }, [selectedClass, historyMonth, supabase])
+  }, [selectedClass, selectedSubject, historyMonth, supabase])
 
   const handleStatusChange = (studentId: string, status: string) => {
     setAttendanceData(prev => ({
@@ -150,12 +191,12 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
     const formattedDate = format(date, 'yyyy-MM-dd')
     
     // Prepare data
-    // If a student has no record in attendanceData, default to 'present'
     const upsertData = students.map(student => {
       const record = attendanceData[student.id] || {}
       return {
         student_id: student.id,
         class_id: selectedClass,
+        subject_id: selectedSubject === "homeroom" ? null : selectedSubject,
         date: formattedDate,
         status: record.status || 'present', 
         note: record.note || '',
@@ -163,12 +204,20 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
     })
 
     try {
-      // 1. Delete existing records for this class & date
-      const { error: deleteError } = await supabase
+      // 1. Delete existing records for this class & date & subject
+      let deleteQuery = supabase
         .from('attendance')
         .delete()
         .eq('class_id', selectedClass)
         .eq('date', formattedDate)
+      
+      if (selectedSubject && selectedSubject !== "homeroom") {
+          deleteQuery = deleteQuery.eq('subject_id', selectedSubject)
+      } else {
+          deleteQuery = deleteQuery.is('subject_id', null)
+      }
+
+      const { error: deleteError } = await deleteQuery
       
       if (deleteError) throw deleteError
 
@@ -182,11 +231,24 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
       alert("Lưu điểm danh thành công!")
       
       // Refresh attendance data
-      const { data } = await supabase
+      // (Re-using logic from fetchAttendance, but manually triggered)
+      // Actually we can just let the user continue, but good to refresh to confirm
+      // For simplicity, we assume success updates local state, but let's re-fetch to be safe
+      // Or just rely on the existing state if we trust it?
+      // Let's re-fetch to ensure sync
+      let query = supabase
         .from('attendance')
         .select('*')
         .eq('class_id', selectedClass)
         .eq('date', formattedDate)
+      
+      if (selectedSubject && selectedSubject !== "homeroom") {
+          query = query.eq('subject_id', selectedSubject)
+      } else {
+          query = query.is('subject_id', null)
+      }
+
+      const { data } = await query
         
       const newAttendanceData : Record<string, any> = {}
       if (data) {
@@ -200,12 +262,21 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
       if (historyMonth && date.getMonth() === historyMonth.getMonth() && date.getFullYear() === historyMonth.getFullYear()) {
          const start = startOfMonth(historyMonth)
          const end = endOfMonth(historyMonth)
-         const { data: histData } = await supabase
+         
+         let histQuery = supabase
           .from('attendance')
           .select('*')
           .eq('class_id', selectedClass)
           .gte('date', format(start, 'yyyy-MM-dd'))
           .lte('date', format(end, 'yyyy-MM-dd'))
+         
+         if (selectedSubject && selectedSubject !== "homeroom") {
+            histQuery = histQuery.eq('subject_id', selectedSubject)
+         } else {
+            histQuery = histQuery.is('subject_id', null)
+         }
+
+         const { data: histData } = await histQuery
          if (histData) setMonthlyAttendance(histData)
       }
 
@@ -238,6 +309,22 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
               {classes.map((cls) => (
                 <SelectItem key={cls.id} value={cls.id}>
                   {cls.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-[300px]">
+           <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn môn học (hoặc Điểm danh lớp)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="homeroom">-- Điểm danh Lớp --</SelectItem>
+              {subjects.map((sub) => (
+                <SelectItem key={sub.id} value={sub.id}>
+                  {sub.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -294,7 +381,11 @@ export default function AttendanceClient({ classes }: AttendanceClientProps) {
                  {loading ? (
                    <div className="text-center py-4">Đang tải danh sách...</div>
                  ) : students.length === 0 ? (
-                    <div className="text-center py-10 text-muted-foreground">Lớp chưa có học sinh nào.</div>
+                    <div className="text-center py-10 text-muted-foreground">
+                        {selectedSubject !== "homeroom" 
+                            ? "Lớp này chưa có học sinh nào đăng ký môn học này." 
+                            : "Lớp chưa có học sinh nào."}
+                    </div>
                  ) : (
                    <Table>
                     <TableHeader>

@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Plus, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import {
   Select,
   SelectContent,
@@ -19,45 +22,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Loader2 } from "lucide-react"
-import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { DatePicker } from "@/components/ui/date-picker"
+import { format } from "date-fns"
 
-export function AddTransactionDialog() {
+interface AddTransactionDialogProps {
+    onSuccess?: () => void
+}
+
+export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [students, setStudents] = useState<any[]>([])
+  
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (open) {
+        const fetchStudents = async () => {
+            const { data } = await supabase.from('students').select('id, name, student_code').order('name')
+            if (data) setStudents(data)
+        }
+        fetchStudents()
+    }
+  }, [open])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     const formData = new FormData(event.currentTarget)
-    const date = formData.get("date") as string
-    const description = formData.get("description") as string
-    const amount = parseFloat(formData.get("amount") as string)
-    const type = formData.get("type") as string
-    const created_by = formData.get("created_by") as string
+    
+    const dateStr = date ? format(date, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]
+    const description = formData.get("description")
+    const amount = formData.get("amount")
+    const type = formData.get("type")
+    const student_id_raw = formData.get("student_id")
+    const student_id = (student_id_raw && student_id_raw !== 'none') ? student_id_raw : null
 
-    try {
-      const { error } = await supabase.from("transactions").insert({
-          date,
-          description,
-          amount,
-          type,
-          created_by
-      })
+    const { error } = await supabase.from("transactions").insert({
+      date: dateStr,
+      description,
+      amount,
+      type,
+      student_id
+    })
 
-      if (error) throw error
-
+    if (!error) {
       setOpen(false)
       router.refresh()
-    } catch (error: any) {
-        alert("Lỗi: " + error.message)
-    } finally {
-        setLoading(false)
+      if (onSuccess) onSuccess()
+    } else {
+      alert("Lỗi: " + error.message)
     }
+    setLoading(false)
   }
 
   return (
@@ -79,46 +97,58 @@ export function AddTransactionDialog() {
             <Label htmlFor="date" className="text-right">
               Ngày
             </Label>
-            <Input id="date" name="date" type="date" required className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} />
+            <div className="col-span-3">
+                <DatePicker date={date} setDate={setDate} />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               Nội dung
             </Label>
-            <Input id="description" name="description" required className="col-span-3" placeholder="Ví dụ: Thu học phí..." />
+            <Input id="description" name="description" required className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="amount" className="text-right">
               Số tiền
             </Label>
-            <Input id="amount" name="amount" type="number" required className="col-span-3" placeholder="0" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="created_by" className="text-right">
-              Người tạo
-            </Label>
-            <Input id="created_by" name="created_by" required className="col-span-3" placeholder="Nhập tên người tạo..." />
+            <Input id="amount" name="amount" type="number" required className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="type" className="text-right">
               Loại
             </Label>
-            <Select name="type" required defaultValue="income">
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Chọn loại" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="income">Thu</SelectItem>
-                    <SelectItem value="expense">Chi</SelectItem>
-                </SelectContent>
+            <Select name="type" defaultValue="income">
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Chọn loại giao dịch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Thu (Income)</SelectItem>
+                <SelectItem value="expense">Chi (Expense)</SelectItem>
+              </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="student_id" className="text-right">
+              Học sinh
+            </Label>
+            <Select name="student_id">
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Chọn học sinh (nếu có)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">-- Không chọn --</SelectItem>
+                {students.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.student_code} - {s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end">
             <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Lưu
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Lưu giao dịch
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

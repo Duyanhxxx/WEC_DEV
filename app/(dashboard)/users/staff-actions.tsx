@@ -39,6 +39,7 @@ export function StaffActions({ staff }: StaffActionsProps) {
     const name = formData.get("name")
     const email = formData.get("email")
     const phone = formData.get("phone")
+    const dob = formData.get("dob")
     const role = formData.get("role")
     const employment_type = formData.get("employment_type")
     const salary_rate = formData.get("salary_rate")
@@ -50,6 +51,7 @@ export function StaffActions({ staff }: StaffActionsProps) {
         name,
         email,
         phone,
+        dob: dob || null,
         role,
         employment_type,
         salary_rate: salary_rate ? Number(salary_rate) : 0
@@ -112,7 +114,11 @@ export function StaffActions({ staff }: StaffActionsProps) {
               <Input id="phone" name="phone" defaultValue={staff.phone} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Vị trí / Chức vụ</Label>
+              <Label htmlFor="dob">Ngày sinh</Label>
+              <Input id="dob" name="dob" type="date" defaultValue={staff.dob} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Chức vụ</Label>
               <Input id="role" name="role" defaultValue={staff.role} />
             </div>
             <div className="space-y-2">

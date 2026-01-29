@@ -88,7 +88,7 @@ export function ClassActions({ cls }: ClassActionsProps) {
               <Input id="grade" name="grade" defaultValue={cls.grade} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="teacher">Giáo viên chủ nhiệm</Label>
+              <Label htmlFor="teacher">Giáo viên</Label>
               <Input id="teacher" name="teacher" defaultValue={cls.teacher} placeholder="Tên giáo viên" />
             </div>
             <div className="flex justify-end">

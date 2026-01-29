@@ -39,6 +39,7 @@ export function TeacherActions({ teacher }: TeacherActionsProps) {
     const name = formData.get("name")
     const email = formData.get("email")
     const phone = formData.get("phone")
+    const dob = formData.get("dob")
     const subject = formData.get("subject")
     const employment_type = formData.get("employment_type")
     const salary_rate = formData.get("salary_rate")
@@ -50,6 +51,7 @@ export function TeacherActions({ teacher }: TeacherActionsProps) {
         name,
         email,
         phone,
+        dob: dob || null,
         subject,
         employment_type,
         salary_rate: salary_rate ? Number(salary_rate) : 0
@@ -110,6 +112,10 @@ export function TeacherActions({ teacher }: TeacherActionsProps) {
             <div className="space-y-2">
               <Label htmlFor="phone">Số điện thoại</Label>
               <Input id="phone" name="phone" defaultValue={teacher.phone} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dob">Ngày sinh</Label>
+              <Input id="dob" name="dob" type="date" defaultValue={teacher.dob} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subject">Bộ môn</Label>

@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search } from "lucide-react"
+import { SearchInput } from "./search-input"
 import { createClient } from "@/lib/supabase/server"
 import { AddUserDialog } from "./add-user-dialog"
 import { UserActions } from "./user-actions"
@@ -23,15 +23,36 @@ import { TeacherActions } from "./teacher-actions"
 import { StaffActions } from "./staff-actions"
 import { getUserRole } from "@/lib/auth"
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    query?: string
+  }>
+}) {
   const supabase = await createClient()
   const role = await getUserRole()
+  const resolvedSearchParams = await searchParams
+  const query = resolvedSearchParams?.query || ''
 
-  const { data: students } = await supabase.from('students').select('*').order('created_at', { ascending: false })
-  const { data: teachers } = await supabase.from('teachers').select('*').order('created_at', { ascending: false })
-  // Only fetch staff if admin, or just fetch and hide. Fetching and hiding is safer to avoid undefined errors if code assumes data exists, but RLS should handle it. 
-  // For UI clarity, let's just fetch it, but RLS might block it if we set it up that way. The user only asked to hide the management section.
-  const { data: staff } = await supabase.from('staff').select('*').order('created_at', { ascending: false })
+  let studentQuery = supabase.from('students').select('*').order('created_at', { ascending: false })
+  if (query) {
+    studentQuery = studentQuery.ilike('name', `%${query}%`)
+  }
+  const { data: students } = await studentQuery
+
+  let teacherQuery = supabase.from('teachers').select('*').order('created_at', { ascending: false })
+  if (query) {
+    teacherQuery = teacherQuery.ilike('name', `%${query}%`)
+  }
+  const { data: teachers } = await teacherQuery
+
+  let staffQuery = supabase.from('staff').select('*').order('created_at', { ascending: false })
+  if (query) {
+    staffQuery = staffQuery.ilike('name', `%${query}%`)
+  }
+  const { data: staff } = await staffQuery
+
   const { data: classes } = await supabase.from('classes').select('id, name').order('name', { ascending: true })
 
   return (
@@ -58,21 +79,14 @@ export default async function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                 <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Tìm kiếm học sinh..."
-                      className="pl-8 sm:w-[300px]"
-                    />
-                 </div>
+                 <SearchInput placeholder="Tìm kiếm học sinh..." />
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Mã HS</TableHead>
                     <TableHead>Họ và tên</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead>Tên phụ huynh</TableHead>
                     <TableHead>Số điện thoại</TableHead>
                     <TableHead className="text-right">Hành động</TableHead>
                   </TableRow>
@@ -89,7 +103,7 @@ export default async function UsersPage() {
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.student_code}</TableCell>
                         <TableCell>{student.name}</TableCell>
-                        <TableCell>{student.email}</TableCell>
+                        <TableCell>{student.parent_name}</TableCell>
                         <TableCell>{student.phone}</TableCell>
                         <TableCell className="text-right">
                           <UserActions student={student} classes={classes || []} />
@@ -113,14 +127,7 @@ export default async function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                 <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Tìm kiếm giáo viên..."
-                      className="pl-8 sm:w-[300px]"
-                    />
-                 </div>
+                 <SearchInput placeholder="Tìm kiếm giáo viên..." />
               </div>
               <Table>
                 <TableHeader>
@@ -170,14 +177,7 @@ export default async function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                 <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Tìm kiếm nhân viên..."
-                      className="pl-8 sm:w-[300px]"
-                    />
-                 </div>
+                 <SearchInput placeholder="Tìm kiếm nhân viên..." />
               </div>
               <Table>
                 <TableHeader>

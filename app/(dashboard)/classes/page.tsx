@@ -42,7 +42,7 @@ export default async function ClassesPage() {
               <TableRow>
                 <TableHead>Tên lớp</TableHead>
                 <TableHead>Khối</TableHead>
-                <TableHead>Giáo viên chủ nhiệm</TableHead>
+                <TableHead>Giáo viên</TableHead>
                 <TableHead className="text-right">Hành động</TableHead>
               </TableRow>
             </TableHeader>

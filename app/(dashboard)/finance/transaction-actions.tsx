@@ -18,9 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Pencil, Trash2, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { DatePicker } from "@/components/ui/date-picker"
+import { format } from "date-fns"
 
 interface TransactionActionsProps {
   transaction: any
@@ -30,14 +32,31 @@ export function TransactionActions({ transaction }: TransactionActionsProps) {
   const [openEdit, setOpenEdit] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
   const [loading, setLoading] = useState(false)
+  
+  // Initialize date from transaction.date string (YYYY-MM-DD)
+  // Ensure we parse it as local date (midnight)
+  const [y, m, d] = transaction.date.split('-').map(Number)
+  const [date, setDate] = useState<Date | undefined>(new Date(y, m - 1, d))
+  
   const router = useRouter()
   const supabase = createClient()
+
+  // Update date state when transaction changes or dialog opens
+  useEffect(() => {
+    if (openEdit) {
+        const [y, m, d] = transaction.date.split('-').map(Number)
+        setDate(new Date(y, m - 1, d))
+    }
+  }, [openEdit, transaction.date])
 
   async function onUpdate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     const formData = new FormData(event.currentTarget)
-    const date = formData.get("date")
+    
+    // Use the date from state, formatted as YYYY-MM-DD for database
+    const dateStr = date ? format(date, 'yyyy-MM-dd') : transaction.date
+
     const description = formData.get("description")
     const amount = formData.get("amount")
     const type = formData.get("type")
@@ -45,7 +64,7 @@ export function TransactionActions({ transaction }: TransactionActionsProps) {
     const { error } = await supabase
       .from("transactions")
       .update({
-        date,
+        date: dateStr,
         description,
         amount,
         type,
@@ -95,7 +114,9 @@ export function TransactionActions({ transaction }: TransactionActionsProps) {
               <Label htmlFor="date" className="text-right">
                 Ngày
               </Label>
-              <Input id="date" name="date" type="date" required className="col-span-3" defaultValue={transaction.date} />
+              <div className="col-span-3">
+                  <DatePicker date={date} setDate={setDate} />
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">

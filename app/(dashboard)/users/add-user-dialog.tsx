@@ -33,14 +33,14 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
   async function onAddStudent(formData: FormData) {
     const student_code = formData.get("student_code")
     const name = formData.get("name")
-    const email = formData.get("email")
+    const parent_name = formData.get("parent_name")
     const phone = formData.get("phone")
     const class_id = formData.get("class_id")
 
     const { error } = await supabase.from("students").insert({
         student_code,
         name,
-        email,
+        parent_name,
         phone,
         class_id: class_id || null
     })
@@ -58,6 +58,7 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
     const name = formData.get("name")
     const email = formData.get("email")
     const phone = formData.get("phone")
+    const dob = formData.get("dob")
     const subject = formData.get("subject")
     const employment_type = formData.get("employment_type")
     const salary_rate = formData.get("salary_rate")
@@ -67,6 +68,7 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
         name,
         email,
         phone,
+        dob: dob || null,
         subject,
         employment_type,
         salary_rate: salary_rate ? Number(salary_rate) : 0
@@ -85,6 +87,7 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
     const name = formData.get("name")
     const email = formData.get("email")
     const phone = formData.get("phone")
+    const dob = formData.get("dob")
     const role = formData.get("role")
     const employment_type = formData.get("employment_type")
     const salary_rate = formData.get("salary_rate")
@@ -94,6 +97,7 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
         name,
         email,
         phone,
+        dob: dob || null,
         role,
         employment_type,
         salary_rate: salary_rate ? Number(salary_rate) : 0
@@ -136,8 +140,8 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
                 <Input id="name" name="name" required />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" />
+                <Label htmlFor="parent_name">Tên phụ huynh</Label>
+                <Input id="parent_name" name="parent_name" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="phone">Số điện thoại</Label>
@@ -181,8 +185,12 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
                 <Input id="phone" name="phone" />
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="dob">Ngày sinh</Label>
+                <Input id="dob" name="dob" type="date" />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="subject">Bộ môn</Label>
-                <Input id="subject" name="subject" />
+                <Input id="subject" name="subject" required />
               </div>
               <div className="grid gap-2">
                  <Label htmlFor="employment_type">Loại hợp đồng</Label>
@@ -224,8 +232,12 @@ export function AddUserDialog({ classes, role = 'staff' }: { classes: any[], rol
                 <Input id="phone" name="phone" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="role">Vị trí / Chức vụ</Label>
-                <Input id="role" name="role" placeholder="Bảo vệ / Kế toán..." />
+                <Label htmlFor="dob">Ngày sinh</Label>
+                <Input id="dob" name="dob" type="date" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Chức vụ</Label>
+                <Input id="role" name="role" required />
               </div>
               <div className="grid gap-2">
                  <Label htmlFor="employment_type">Loại hợp đồng</Label>

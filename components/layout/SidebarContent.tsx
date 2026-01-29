@@ -11,6 +11,7 @@ import {
   BarChart3,
   Banknote,
   CalendarClock,
+  BookOpen,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -35,6 +36,11 @@ export const sidebarItems = [
     title: "Lớp học",
     href: "/classes",
     icon: School,
+  },
+  {
+    title: "Môn học",
+    href: "/subjects",
+    icon: BookOpen,
   },
   {
     title: "Thu chi",

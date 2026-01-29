@@ -37,7 +37,7 @@ export function UserActions({ student, classes }: UserActionsProps) {
     setLoading(true)
     const student_code = formData.get("student_code")
     const name = formData.get("name")
-    const email = formData.get("email")
+    const parent_name = formData.get("parent_name")
     const phone = formData.get("phone")
     const class_id = formData.get("class_id")
 
@@ -46,7 +46,7 @@ export function UserActions({ student, classes }: UserActionsProps) {
       .update({
         student_code,
         name,
-        email,
+        parent_name,
         phone,
         class_id: class_id || null
       })
@@ -100,8 +100,8 @@ export function UserActions({ student, classes }: UserActionsProps) {
               <Input id="name" name="name" defaultValue={student.name} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" defaultValue={student.email} />
+              <Label htmlFor="parent_name">Tên phụ huynh</Label>
+              <Input id="parent_name" name="parent_name" defaultValue={student.parent_name} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Số điện thoại</Label>
