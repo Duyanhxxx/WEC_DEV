@@ -22,9 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CalendarIcon, Loader2, Download } from "lucide-react"
 import { format, startOfMonth, endOfMonth } from "date-fns"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import * as XLSX from "xlsx"
+import { getAdjustments } from "./payroll-actions"
+import { PayrollAdjustmentDialog } from "./payroll-adjustment-dialog"
 
 interface Employee {
   id: string
@@ -45,6 +47,17 @@ interface AttendanceRecord {
   staff_id?: string
 }
 
+interface Adjustment {
+  id: string
+  teacher_id?: string
+  staff_id?: string
+  month: string
+  amount: number
+  type: 'bonus' | 'deduction'
+  description: string
+  created_at: string
+}
+
 interface PayrollClientProps {
   teachers: Employee[]
   staff: Employee[]
@@ -55,94 +68,117 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
   const [reportMonth, setReportMonth] = useState<string>(format(new Date(), 'yyyy-MM'))
   const [teacherSalaryData, setTeacherSalaryData] = useState<any[]>([])
   const [staffSalaryData, setStaffSalaryData] = useState<any[]>([])
+  const [adjustments, setAdjustments] = useState<Adjustment[]>([])
   const [calculating, setCalculating] = useState(false)
   
   const supabase = createClient()
 
   // --- Salary Logic ---
 
+  const calculateSalary = useCallback(async () => {
+    setCalculating(true)
+    const [year, month] = reportMonth.split('-').map(Number)
+    const startDate = startOfMonth(new Date(year, month - 1))
+    const endDate = endOfMonth(new Date(year, month - 1))
+
+    // Fetch Adjustments
+    const adjData = await getAdjustments(reportMonth)
+    setAdjustments(adjData || [])
+
+    // Calculate Teacher Salary
+    const { data: tLogs } = await supabase
+      .from('teacher_attendance')
+      .select('*')
+      .gte('date', format(startDate, 'yyyy-MM-dd'))
+      .lte('date', format(endDate, 'yyyy-MM-dd'))
+
+    const tReport = teachers.map(t => {
+      const logs = (tLogs as AttendanceRecord[])?.filter(l => l.teacher_id === t.id) || []
+      const myAdjs = (adjData || []).filter((a: Adjustment) => a.teacher_id === t.id)
+      
+      const totalBonus = myAdjs.filter((a: Adjustment) => a.type === 'bonus').reduce((sum: number, a: Adjustment) => sum + a.amount, 0)
+      const totalDeduction = myAdjs.filter((a: Adjustment) => a.type === 'deduction').reduce((sum: number, a: Adjustment) => sum + a.amount, 0)
+
+      let totalHours = 0
+      let workDays = 0
+      logs.forEach(l => {
+         if (l.status === 'present') {
+             workDays++
+             totalHours += (l.hours_worked || 0)
+         }
+      })
+      let baseSalary = 0
+      if (t.employment_type === 'full-time') {
+          baseSalary = t.salary_rate || 0
+      } else {
+          baseSalary = (t.salary_rate || 0) * totalHours
+      }
+      
+      const totalSalary = baseSalary + totalBonus - totalDeduction
+
+      return { ...t, workDays, totalHours, baseSalary, totalBonus, totalDeduction, totalSalary, adjustments: myAdjs }
+    })
+    setTeacherSalaryData(tReport)
+
+    // Calculate Staff Salary
+    const { data: sLogs } = await supabase
+      .from('staff_attendance')
+      .select('*')
+      .gte('date', format(startDate, 'yyyy-MM-dd'))
+      .lte('date', format(endDate, 'yyyy-MM-dd'))
+
+    const sReport = staff.map(s => {
+      const logs = (sLogs as AttendanceRecord[])?.filter(l => l.staff_id === s.id) || []
+      const myAdjs = (adjData || []).filter((a: Adjustment) => a.staff_id === s.id)
+
+      const totalBonus = myAdjs.filter((a: Adjustment) => a.type === 'bonus').reduce((sum: number, a: Adjustment) => sum + a.amount, 0)
+      const totalDeduction = myAdjs.filter((a: Adjustment) => a.type === 'deduction').reduce((sum: number, a: Adjustment) => sum + a.amount, 0)
+
+      let totalHours = 0
+      let workDays = 0
+      logs.forEach(l => {
+         if (l.status === 'present') {
+             workDays++
+             totalHours += (l.hours_worked || 0)
+         }
+      })
+      let baseSalary = 0
+      if (s.employment_type === 'full-time') {
+          baseSalary = s.salary_rate || 0
+      } else {
+          baseSalary = (s.salary_rate || 0) * totalHours
+      }
+
+      const totalSalary = baseSalary + totalBonus - totalDeduction
+
+      return { ...s, workDays, totalHours, baseSalary, totalBonus, totalDeduction, totalSalary, adjustments: myAdjs }
+    })
+    setStaffSalaryData(sReport)
+
+    setCalculating(false)
+  }, [reportMonth, teachers, staff, supabase])
+  
   useEffect(() => {
-    async function calculateSalary() {
-      setCalculating(true)
-      const [year, month] = reportMonth.split('-').map(Number)
-      const startDate = startOfMonth(new Date(year, month - 1))
-      const endDate = endOfMonth(new Date(year, month - 1))
-
-      // Calculate Teacher Salary
-      const { data: tLogs } = await supabase
-        .from('teacher_attendance')
-        .select('*')
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
-
-      const tReport = teachers.map(t => {
-        const logs = (tLogs as AttendanceRecord[])?.filter(l => l.teacher_id === t.id) || []
-        let totalHours = 0
-        let workDays = 0
-        logs.forEach(l => {
-           if (l.status === 'present') {
-               workDays++
-               totalHours += (l.hours_worked || 0)
-           }
-        })
-        let totalSalary = 0
-        if (t.employment_type === 'full-time') {
-            totalSalary = t.salary_rate || 0
-        } else {
-            totalSalary = (t.salary_rate || 0) * totalHours
-        }
-        return { ...t, workDays, totalHours, totalSalary }
-      })
-      setTeacherSalaryData(tReport)
-
-      // Calculate Staff Salary
-      const { data: sLogs } = await supabase
-        .from('staff_attendance')
-        .select('*')
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
-
-      const sReport = staff.map(s => {
-        const logs = (sLogs as AttendanceRecord[])?.filter(l => l.staff_id === s.id) || []
-        let totalHours = 0
-        let workDays = 0
-        logs.forEach(l => {
-           if (l.status === 'present') {
-               workDays++
-               totalHours += (l.hours_worked || 0)
-           }
-        })
-        let totalSalary = 0
-        if (s.employment_type === 'full-time') {
-            totalSalary = s.salary_rate || 0
-        } else {
-            totalSalary = (s.salary_rate || 0) * totalHours
-        }
-        return { ...s, workDays, totalHours, totalSalary }
-      })
-      setStaffSalaryData(sReport)
-
-      setCalculating(false)
-    }
-    
     if (teachers.length > 0 || staff.length > 0) {
         calculateSalary()
     }
-  }, [reportMonth, teachers, staff, supabase])
+  }, [calculateSalary, teachers.length, staff.length])
 
   const handleExportPayroll = () => {
     const wb = XLSX.utils.book_new()
 
     // Helper to create sheet data
     const createSheetData = (data: any[]) => {
-        const header = ["Họ tên", "Loại HĐ", "Số ngày làm", "Tổng giờ làm", "Mức lương", "Đơn vị", "Tổng lương"]
+        const header = ["Họ tên", "Loại HĐ", "Số ngày làm", "Tổng giờ làm", "Lương cơ bản", "Đơn vị", "Thưởng", "Khấu trừ", "Tổng lương"]
         const rows = data.map(d => [
             d.name,
             d.employment_type === 'full-time' ? 'Full-time' : 'Part-time',
             d.workDays,
             d.totalHours,
-            d.salary_rate,
+            d.baseSalary,
             d.employment_type === 'full-time' ? 'tháng' : 'giờ',
+            d.totalBonus,
+            d.totalDeduction,
             d.totalSalary
         ])
         return [header, ...rows]
@@ -163,16 +199,18 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
     XLSX.writeFile(wb, fileName)
   }
 
-  const renderSalaryTable = (data: (Employee & { workDays: number; totalHours: number; totalSalary: number })[]) => (
+  const renderSalaryTable = (data: (Employee & { workDays: number; totalHours: number; totalSalary: number, baseSalary: number, totalBonus: number, totalDeduction: number, adjustments: Adjustment[] })[]) => (
     <Table>
         <TableHeader>
             <TableRow>
                 <TableHead>Họ tên</TableHead>
                 <TableHead>Loại HĐ</TableHead>
-                <TableHead className="text-right">Số ngày làm</TableHead>
-                <TableHead className="text-right">Tổng giờ làm</TableHead>
-                <TableHead className="text-right">Mức lương</TableHead>
+                <TableHead className="text-right">Công</TableHead>
+                <TableHead className="text-right">Lương cơ bản</TableHead>
+                <TableHead className="text-right text-green-600">Thưởng</TableHead>
+                <TableHead className="text-right text-red-600">Khấu trừ</TableHead>
                 <TableHead className="text-right">Tổng lương</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
@@ -185,16 +223,31 @@ export default function PayrollClient({ teachers, staff }: PayrollClientProps) {
                             {d.employment_type === 'full-time' ? 'Full-time' : 'Part-time'}
                         </span>
                     </TableCell>
-                    <TableCell className="text-right">{d.workDays} ngày</TableCell>
-                    <TableCell className="text-right">{d.totalHours} giờ</TableCell>
                     <TableCell className="text-right">
-                        {Number(d.salary_rate).toLocaleString('vi-VN')}₫ 
-                        <span className="text-xs text-muted-foreground ml-1">
-                            /{d.employment_type === 'full-time' ? 'tháng' : 'giờ'}
-                        </span>
+                        <div>{d.workDays} ngày</div>
+                        <div className="text-xs text-muted-foreground">{d.totalHours} giờ</div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        {Number(d.baseSalary).toLocaleString('vi-VN')}₫
+                    </TableCell>
+                    <TableCell className="text-right text-green-600">
+                        {d.totalBonus > 0 ? `+${d.totalBonus.toLocaleString('vi-VN')}₫` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right text-red-600">
+                        {d.totalDeduction > 0 ? `-${d.totalDeduction.toLocaleString('vi-VN')}₫` : '-'}
                     </TableCell>
                     <TableCell className="text-right font-bold text-green-600">
                         {d.totalSalary.toLocaleString('vi-VN')}₫
+                    </TableCell>
+                    <TableCell>
+                        <PayrollAdjustmentDialog 
+                            employeeId={d.id}
+                            employeeName={d.name}
+                            type={d.teacher_code ? 'teacher' : 'staff'}
+                            month={reportMonth}
+                            adjustments={d.adjustments}
+                            onUpdate={calculateSalary}
+                        />
                     </TableCell>
                 </TableRow>
             ))}
