@@ -27,8 +27,8 @@ export default async function DashboardPage() {
     supabase.from('transactions').select('amount, type, date').gte('date', startOfYear),
     supabase.from('staff').select('*', { count: 'exact', head: true }),
     supabase.from('teachers').select('*', { count: 'exact', head: true }),
-    supabase.from('teachers').select('id, name, dob, subject, email'),
-    supabase.from('staff').select('id, name, dob, role, email')
+    supabase.from('teachers').select('id, name, dob, subject'),
+    supabase.from('staff').select('id, name, dob, role')
   ])
 
   const totalStaff = (staffCount || 0) + (teacherCount || 0)
@@ -38,7 +38,6 @@ export default async function DashboardPage() {
       id: t.id,
       name: t.name,
       dob: t.dob,
-      email: t.email,
       role: t.subject ? `GV ${t.subject}` : 'Giáo viên',
       type: 'teacher' as const
     })),
@@ -46,7 +45,6 @@ export default async function DashboardPage() {
       id: s.id,
       name: s.name,
       dob: s.dob,
-      email: s.email,
       role: s.role || 'Nhân viên',
       type: 'staff' as const
     }))

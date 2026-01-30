@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Gift, Cake, Copy, Check, Mail, Loader2 } from "lucide-react"
+import { Gift, Cake, Copy, Check } from "lucide-react"
 import { useState } from "react"
 import {
   Dialog,
@@ -11,13 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { sendBirthdayEmail } from "./birthday-actions"
 
 interface BirthdayPerson {
   id: string
   name: string
   dob: string // YYYY-MM-DD
-  email?: string
   role: string // 'Giáo viên' or Staff role
   type: 'teacher' | 'staff'
 }
@@ -39,7 +37,6 @@ const WISHES = [
 
 export function BirthdayAlert({ people }: BirthdayAlertProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
-  const [sendingIndex, setSendingIndex] = useState<number | null>(null)
 
   const today = new Date()
   const currentMonth = today.getMonth() + 1
@@ -82,29 +79,6 @@ export function BirthdayAlert({ people }: BirthdayAlertProps) {
     navigator.clipboard.writeText(text)
     setCopiedIndex(index)
     setTimeout(() => setCopiedIndex(null), 2000)
-  }
-
-  const handleSendEmail = async (person: BirthdayPerson, wish: string, index: number) => {
-    if (!person.email) {
-        alert("Người này chưa có email trong hệ thống!")
-        return
-    }
-    
-    if (!confirm(`Gửi email chúc mừng đến ${person.name}?`)) return
-
-    setSendingIndex(index)
-    try {
-        await sendBirthdayEmail({
-            email: person.email,
-            name: person.name,
-            message: wish
-        })
-        alert("Đã gửi email thành công!")
-    } catch (error: any) {
-        alert("Lỗi: " + error.message)
-    } finally {
-        setSendingIndex(null)
-    }
   }
 
   if (upcomingBirthdays.length === 0) {
@@ -159,26 +133,11 @@ export function BirthdayAlert({ people }: BirthdayAlertProps) {
                               size="icon"
                               className="h-8 w-8 shrink-0"
                               onClick={() => copyToClipboard(wish, idx)}
-                              title="Sao chép"
                             >
                               {copiedIndex === idx ? (
                                 <Check className="h-4 w-4 text-green-500" />
                               ) : (
                                 <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => handleSendEmail(person, wish, idx)}
-                              disabled={sendingIndex !== null || !person.email}
-                              title={person.email ? "Gửi Email" : "Chưa có email"}
-                            >
-                              {sendingIndex === idx ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Mail className="h-4 w-4" />
                               )}
                             </Button>
                           </div>
