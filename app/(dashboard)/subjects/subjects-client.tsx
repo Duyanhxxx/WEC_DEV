@@ -30,7 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Pencil, Trash2, Users } from "lucide-react"
+import { Plus, Pencil, Trash2, Users, Save } from "lucide-react"
+import { createSubjectClass } from "./subject-actions"
 
 interface Subject {
   id: string
@@ -62,6 +63,8 @@ export default function SubjectsClient({ initialSubjects, classes }: { initialSu
   const [students, setStudents] = useState<Student[]>([])
   const [enrolledStudentIds, setEnrolledStudentIds] = useState<string[]>([])
   const [loadingStudents, setLoadingStudents] = useState(false)
+  const [newClassName, setNewClassName] = useState("")
+  const [creatingClass, setCreatingClass] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -151,6 +154,32 @@ export default function SubjectsClient({ initialSubjects, classes }: { initialSu
       await supabase.from('student_subjects').delete()
         .eq('student_id', studentId)
         .eq('subject_id', selectedSubject.id)
+    }
+  }
+
+  const handleCreateClass = async () => {
+    if (!selectedSubject || !newClassName) return
+    if (enrolledStudentIds.length === 0) {
+      alert("Vui lòng chọn ít nhất một học sinh")
+      return
+    }
+
+    setCreatingClass(true)
+    try {
+      await createSubjectClass({
+        subject_id: selectedSubject.id,
+        name: newClassName,
+        student_ids: enrolledStudentIds
+      })
+      alert("Đã tạo lớp thành công!")
+      setOpenEnroll(false)
+      setNewClassName("")
+      router.refresh()
+    } catch (error: any) {
+      console.error(error)
+      alert("Lỗi: " + error.message)
+    } finally {
+      setCreatingClass(false)
     }
   }
 
@@ -256,12 +285,13 @@ export default function SubjectsClient({ initialSubjects, classes }: { initialSu
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">ĐK</TableHead>
+                    <TableHead className="w-[50px]">STT</TableHead>
                     <TableHead>Mã HS</TableHead>
                     <TableHead>Họ tên</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map(student => {
+                  {students.map((student, index) => {
                     const isEnrolled = enrolledStudentIds.includes(student.id)
                     return (
                       <TableRow key={student.id}>
@@ -271,6 +301,7 @@ export default function SubjectsClient({ initialSubjects, classes }: { initialSu
                             onCheckedChange={(checked) => toggleEnrollment(student.id, checked as boolean)} 
                           />
                         </TableCell>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell>{student.student_code}</TableCell>
                         <TableCell>{student.name}</TableCell>
                       </TableRow>
@@ -279,6 +310,23 @@ export default function SubjectsClient({ initialSubjects, classes }: { initialSu
                 </TableBody>
               </Table>
             )}
+          </div>
+
+          <div className="border-t pt-4 mt-2">
+            <h4 className="text-sm font-medium mb-2">Tạo Lớp Học Phần (từ danh sách đã chọn)</h4>
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Nhập tên lớp (VD: Lý 10A - Nhóm 1)" 
+                value={newClassName}
+                onChange={e => setNewClassName(e.target.value)}
+              />
+              <Button onClick={handleCreateClass} disabled={creatingClass || !newClassName || enrolledStudentIds.length === 0}>
+                {creatingClass ? "Đang tạo..." : "Tạo Lớp"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              * Chọn học sinh ở trên, sau đó nhập tên lớp và bấm Tạo Lớp.
+            </p>
           </div>
         </DialogContent>
       </Dialog>

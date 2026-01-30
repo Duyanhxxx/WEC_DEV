@@ -35,19 +35,19 @@ export default async function UsersPage({
   const resolvedSearchParams = await searchParams
   const query = resolvedSearchParams?.query || ''
 
-  let studentQuery = supabase.from('students').select('*').order('created_at', { ascending: false })
+  let studentQuery = supabase.from('students').select('*').order('name', { ascending: true })
   if (query) {
     studentQuery = studentQuery.ilike('name', `%${query}%`)
   }
   const { data: students } = await studentQuery
 
-  let teacherQuery = supabase.from('teachers').select('*').order('created_at', { ascending: false })
+  let teacherQuery = supabase.from('teachers').select('*').order('name', { ascending: true })
   if (query) {
     teacherQuery = teacherQuery.ilike('name', `%${query}%`)
   }
   const { data: teachers } = await teacherQuery
 
-  let staffQuery = supabase.from('staff').select('*').order('created_at', { ascending: false })
+  let staffQuery = supabase.from('staff').select('*').order('name', { ascending: true })
   if (query) {
     staffQuery = staffQuery.ilike('name', `%${query}%`)
   }
@@ -84,6 +84,7 @@ export default async function UsersPage({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">STT</TableHead>
                     <TableHead>Mã HS</TableHead>
                     <TableHead>Họ và tên</TableHead>
                     <TableHead>Tên phụ huynh</TableHead>
@@ -94,13 +95,14 @@ export default async function UsersPage({
                 <TableBody>
                   {students?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         Chưa có dữ liệu học sinh
                       </TableCell>
                     </TableRow>
                   ) : (
-                    students?.map((student) => (
+                    students?.map((student, index) => (
                       <TableRow key={student.id}>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell className="font-medium">{student.student_code}</TableCell>
                         <TableCell>{student.name}</TableCell>
                         <TableCell>{student.parent_name}</TableCell>
@@ -132,6 +134,7 @@ export default async function UsersPage({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">STT</TableHead>
                     <TableHead>Mã GV</TableHead>
                     <TableHead>Họ và tên</TableHead>
                     <TableHead>Bộ môn</TableHead>
@@ -143,13 +146,14 @@ export default async function UsersPage({
                 <TableBody>
                   {teachers?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         Chưa có dữ liệu giáo viên
                       </TableCell>
                     </TableRow>
                   ) : (
-                    teachers?.map((teacher) => (
+                    teachers?.map((teacher, index) => (
                       <TableRow key={teacher.id}>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell className="font-medium">{teacher.teacher_code}</TableCell>
                         <TableCell>{teacher.name}</TableCell>
                         <TableCell>{teacher.subject}</TableCell>
@@ -182,6 +186,7 @@ export default async function UsersPage({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">STT</TableHead>
                     <TableHead>Mã NV</TableHead>
                     <TableHead>Họ và tên</TableHead>
                     <TableHead>Vị trí</TableHead>
@@ -193,13 +198,14 @@ export default async function UsersPage({
                 <TableBody>
                   {staff?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         Chưa có dữ liệu nhân viên
                       </TableCell>
                     </TableRow>
                   ) : (
-                    staff?.map((s) => (
+                    staff?.map((s, index) => (
                       <TableRow key={s.id}>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell className="font-medium">{s.staff_code}</TableCell>
                         <TableCell>{s.name}</TableCell>
                         <TableCell>{s.role}</TableCell>

@@ -75,7 +75,7 @@ export function TuitionStats() {
       setLoading(true)
       
       // 1. Fetch Students
-      let studentQuery = supabase.from('students').select('*')
+      let studentQuery = supabase.from('students').select('*').order('name')
       if (selectedClassId !== 'all') {
         studentQuery = studentQuery.eq('class_id', selectedClassId)
       }
@@ -204,6 +204,7 @@ export function TuitionStats() {
             <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">STT</TableHead>
                     <TableHead>Mã HS</TableHead>
                     <TableHead>Họ tên</TableHead>
                     <TableHead>Phụ huynh</TableHead>
@@ -214,11 +215,12 @@ export function TuitionStats() {
                 <TableBody>
                   {stats.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">Không có học sinh nào</TableCell>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">Không có học sinh nào</TableCell>
                     </TableRow>
                   ) : (
-                    stats.map((s) => (
+                    stats.map((s, index) => (
                       <TableRow key={s.id}>
+                        <TableCell>{index + 1}</TableCell>
                         <TableCell className="font-medium">{s.student_code}</TableCell>
                         <TableCell>{s.name}</TableCell>
                         <TableCell>{s.parent_name}</TableCell>

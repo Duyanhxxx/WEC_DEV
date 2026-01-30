@@ -469,7 +469,8 @@ export default function AttendanceClient({ classes, subjects }: AttendanceClient
                   <Table className="border-collapse border">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[150px] sticky left-0 bg-background z-10 border-r">Học sinh</TableHead>
+                        <TableHead className="w-[40px] sticky left-0 bg-background z-20 border-r text-center">STT</TableHead>
+                        <TableHead className="min-w-[150px] sticky left-[40px] bg-background z-20 border-r">Học sinh</TableHead>
                         {daysInMonth.map(day => (
                           <TableHead key={day.toString()} className="text-center p-1 min-w-[30px] text-xs border-r h-8">
                             {format(day, 'd')}
@@ -478,9 +479,10 @@ export default function AttendanceClient({ classes, subjects }: AttendanceClient
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {students.map(student => (
+                      {students.map((student, index) => (
                         <TableRow key={student.id}>
-                          <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">{student.name}</TableCell>
+                          <TableCell className="sticky left-0 bg-background z-20 border-r text-center">{index + 1}</TableCell>
+                          <TableCell className="font-medium sticky left-[40px] bg-background z-20 border-r">{student.name}</TableCell>
                           {daysInMonth.map(day => {
                             const dateStr = format(day, 'yyyy-MM-dd')
                             const record = monthlyAttendance.find(
