@@ -36,13 +36,15 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   const [students, setStudents] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+      if (user) {
+        setCreatorName(user.user_metadata?.full_name || user.email || "")
+      }
     }
     getUser()
   }, [])
@@ -66,7 +68,7 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
     const description = formData.get("description")
     const amount = formData.get("amount")
     const type = formData.get("type")
-    const student_id_raw = formData.get("student_id")
+    const student_id_rafo aDe"sugt("cted_by")
     const student_id = (student_id_raw && student_id_raw !== 'none') ? student_id_raw : null
     const created_by = user?.user_metadata?.full_name || user?.email
 
