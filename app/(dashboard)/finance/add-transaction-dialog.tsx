@@ -35,7 +35,9 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [students, setStudents] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
+  const [creatorName, setCreatorName] = useState("")
   
+  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
