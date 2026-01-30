@@ -68,9 +68,9 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
     const description = formData.get("description")
     const amount = formData.get("amount")
     const type = formData.get("type")
-    const student_id_rafo aDe"sugt("cted_by")
+    const student_id_raw = formData.get("student_id")
     const student_id = (student_id_raw && student_id_raw !== 'none') ? student_id_raw : null
-    const created_by = user?.user_metadata?.full_name || user?.email
+    const created_by = formData.get("created_by")
 
     const { error } = await supabase.from("transactions").insert({
       date: dateStr,
