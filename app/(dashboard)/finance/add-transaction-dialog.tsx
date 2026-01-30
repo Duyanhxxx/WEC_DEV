@@ -34,9 +34,18 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [students, setStudents] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
   
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -59,13 +68,15 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
     const type = formData.get("type")
     const student_id_raw = formData.get("student_id")
     const student_id = (student_id_raw && student_id_raw !== 'none') ? student_id_raw : null
+    const created_by = user?.user_metadata?.full_name || user?.email
 
     const { error } = await supabase.from("transactions").insert({
       date: dateStr,
       description,
       amount,
       type,
-      student_id
+      student_id,
+      created_by
     })
 
     if (!error) {
@@ -100,6 +111,18 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
             <div className="col-span-3">
                 <DatePicker date={date} setDate={setDate} />
             </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="created_by" className="text-right">
+              Người tạo
+            </Label>
+            <Input 
+              id="created_by" 
+              name="created_by" 
+              value={creatorName} 
+              onChange={(e) => setCreatorName(e.target.value)}
+              className="col-span-3" 
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
